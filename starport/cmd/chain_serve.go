@@ -32,6 +32,7 @@ func NewChainServe() *cobra.Command {
 	return c
 }
 
+// TODO events and spinner.
 func chainServeHandler(cmd *cobra.Command, args []string) error {
 	chainOption := []chain.Option{
 		chain.LogLevel(logLevel(cmd)),

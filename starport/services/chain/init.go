@@ -10,7 +10,9 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/tendermint/starport/starport/chainconfig"
 	chaincmdrunner "github.com/tendermint/starport/starport/pkg/chaincmd/runner"
+	"github.com/tendermint/starport/starport/pkg/clispinner"
 	"github.com/tendermint/starport/starport/pkg/confile"
+	"github.com/tendermint/starport/starport/pkg/text"
 )
 
 const (
@@ -152,15 +154,17 @@ func (c *Chain) InitAccounts(ctx context.Context, conf chainconfig.Config) error
 		if account.Address == "" {
 			fmt.Fprintf(
 				c.stdLog().out,
-				"🙂 Created account %q with address %q with mnemonic: %q\n",
+				"%s Account created \n\t- Name: %s\n\t- Address: %s\n\t- Mnemonic:\n\t\t%s\n",
+				clispinner.OK,
 				generatedAccount.Name,
 				generatedAccount.Address,
-				generatedAccount.Mnemonic,
+				text.AddTabToLines(text.WrapWordsFromString(generatedAccount.Mnemonic, 8), 2),
 			)
 		} else {
 			fmt.Fprintf(
 				c.stdLog().out,
-				"🙂 Imported an account %q with address: %q\n",
+				"%s Account imported \n\t- Name: %s\n\t- Address: %s\n",
+				clispinner.OK,
 				account.Name,
 				account.Address,
 			)

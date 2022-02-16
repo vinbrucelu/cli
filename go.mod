@@ -33,6 +33,7 @@ require (
 	github.com/jpillora/chisel v1.7.6
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-zglob v0.0.3
+	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/otiai10/copy v1.6.0
 	github.com/pelletier/go-toml v1.9.4
 	github.com/pkg/errors v0.9.1

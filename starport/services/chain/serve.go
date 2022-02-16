@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/starport/starport/chainconfig"
 	chaincmdrunner "github.com/tendermint/starport/starport/pkg/chaincmd/runner"
+	"github.com/tendermint/starport/starport/pkg/clispinner"
 	"github.com/tendermint/starport/starport/pkg/cosmosfaucet"
 	"github.com/tendermint/starport/starport/pkg/dirchange"
 	"github.com/tendermint/starport/starport/pkg/localfs"
@@ -413,11 +414,11 @@ func (c *Chain) start(ctx context.Context, config chainconfig.Config) error {
 	c.served = true
 
 	// print the server addresses.
-	fmt.Fprintf(c.stdLog().out, "🌍 Tendermint node: %s\n", xurl.HTTP(config.Host.RPC))
-	fmt.Fprintf(c.stdLog().out, "🌍 Blockchain API: %s\n", xurl.HTTP(config.Host.API))
+	fmt.Fprintf(c.stdLog().out, "%s Tendermint RPC Address: %s\n", clispinner.OK, xurl.HTTP(config.Host.RPC))
+	fmt.Fprintf(c.stdLog().out, "%s Blockchain API: %s\n", clispinner.OK, xurl.HTTP(config.Host.API))
 
 	if isFaucetEnabled {
-		fmt.Fprintf(c.stdLog().out, "🌍 Token faucet: %s\n", xurl.HTTP(chainconfig.FaucetHost(config)))
+		fmt.Fprintf(c.stdLog().out, "%s Faucet Address: %s\n", clispinner.OK, xurl.HTTP(chainconfig.FaucetHost(config)))
 	}
 
 	return g.Wait()
