@@ -85,7 +85,7 @@ func ExecShouldError() ExecOption {
 	}
 }
 
-// ExecCtx sets cancelation context for the execution.
+// ExecCtx sets cancellation context for the execution.
 func ExecCtx(ctx context.Context) ExecOption {
 	return func(o *execOptions) {
 		o.ctx = ctx
