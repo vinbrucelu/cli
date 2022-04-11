@@ -74,7 +74,7 @@ func TestGetTxViaGRPCGateway(t *testing.T) {
 					return execErr
 				}
 
-				addresses := []string{}
+				addresses := make([]string, 0)
 
 				// collect addresses of alice and bob.
 				var accounts []struct {
