@@ -9,7 +9,7 @@ description: For chains that were scaffolded with Ignite CLI versions lower than
 
 # Upgrading a blockchain to use Ignite CLI v0.20.2
 
-For chains that were scaffolded with Ignite CLI versions lower than v0.20.0, you must make these changes to use Ignite CLI v0.20.0.
+For chains that were scaffolded with Ignite CLI versions lower than v0.20.0, you must make these changes before you can use Ignite CLI v0.20.0.
 
 1. Upgrade your Cosmos SDK version to [v0.45.3](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.45.3).
 
