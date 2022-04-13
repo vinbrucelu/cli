@@ -4,9 +4,10 @@
 package network_test
 
 import (
-	envtest "github.com/tendermint/starport/integration"
-	"github.com/tendermint/starport/starport/pkg/cmdrunner/step"
 	"testing"
+
+	"github.com/ignite-hq/cli/ignite/pkg/cmdrunner/step"
+	envtest "github.com/ignite-hq/cli/integration"
 )
 
 func TestGenerateAnAppWithStargateWithListAndVerify(t *testing.T) {
