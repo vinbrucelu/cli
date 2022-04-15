@@ -29,9 +29,10 @@ import (
 )
 
 const (
-	ServeTimeout = time.Minute * 15
-	IgniteApp    = "ignite"
-	ConfigYML    = "config.yml"
+	ServeTimeout  = time.Minute * 15
+	BlockchainApp = "spnd"
+	IgniteApp     = "ignite"
+	ConfigYML     = "config.yml"
 )
 
 var isCI, _ = strconv.ParseBool(os.Getenv("CI"))
