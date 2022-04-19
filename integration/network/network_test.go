@@ -36,8 +36,8 @@ var (
 
 func TestGenerateAnAppWithStargateWithListAndVerify(t *testing.T) {
 	var (
-		env = envtest.New(t)
-		//path        = env.TmpDir()
+		env         = envtest.New(t)
+		path        = env.TmpDir()
 		ctx, cancel = context.WithTimeout(env.Ctx(), envtest.ServeTimeout)
 	)
 	defer cancel()
@@ -56,47 +56,47 @@ func TestGenerateAnAppWithStargateWithListAndVerify(t *testing.T) {
 	//	))),
 	//)
 
-	//t.Run("publish", func(t *testing.T) {
-	//	env.Must(env.Exec("publish a chain",
-	//		step.NewSteps(step.New(
-	//			step.Exec(envtest.IgniteApp,
-	//				"network",
-	//				"--local",
-	//				"chain",
-	//				"publish",
-	//				chainSource,
-	//				"--from",
-	//				spnCoordinator,
-	//				"--keyring-backend", "test",
-	//			),
-	//			step.Workdir(path),
-	//		)),
-	//		append(defaultOptions, envtest.ExecCtx(ctx))...,
-	//	))
-	//})
-	//t.Run("init", func(t *testing.T) {
-	//	env.Must(env.Exec("init a chain",
-	//		step.NewSteps(step.New(
-	//			step.Exec(envtest.IgniteApp,
-	//				"network",
-	//				"--local",
-	//				"chain",
-	//				"init",
-	//				"1",
-	//				"--default-values",
-	//				"--overwrite-home",
-	//				"--from",
-	//				spnCoordinator,
-	//				"--keyring-backend", "test",
-	//			),
-	//			step.Workdir(path),
-	//		)),
-	//		append(defaultOptions, envtest.ExecCtx(ctx))...,
-	//	))
-	//})
+	t.Run("publish", func(t *testing.T) {
+		env.Must(env.Exec("publish a chain",
+			step.NewSteps(step.New(
+				step.Exec(envtest.IgniteApp,
+					"network",
+					"--local",
+					"chain",
+					"publish",
+					chainSource,
+					"--from",
+					spnCoordinator,
+					"--keyring-backend", "test",
+				),
+				step.Workdir(path),
+			)),
+			append(defaultOptions, envtest.ExecCtx(ctx))...,
+		))
+	})
+	t.Run("init", func(t *testing.T) {
+		env.Must(env.Exec("init a chain",
+			step.NewSteps(step.New(
+				step.Exec(envtest.IgniteApp,
+					"network",
+					"--local",
+					"chain",
+					"init",
+					"1",
+					"--default-values",
+					"--overwrite-home",
+					"--from",
+					spnCoordinator,
+					"--keyring-backend", "test",
+				),
+				step.Workdir(path),
+			)),
+			append(defaultOptions, envtest.ExecCtx(ctx))...,
+		))
+	})
 
 	var wg sync.WaitGroup
-	for i, validator := range []string{spnValidator1, spnValidator2, spnValidator3} {
+	for i, validator := range []string{spnValidator1, spnValidator1, spnValidator2, spnValidator3} {
 		t.Run(fmt.Sprintf("join with %s", validator), func(t *testing.T) {
 			wg.Add(1)
 			go func() {
@@ -113,6 +113,45 @@ func TestGenerateAnAppWithStargateWithListAndVerify(t *testing.T) {
 	}
 	wg.Wait()
 
+	t.Run("reject requests", func(t *testing.T) {
+		env.Must(env.Exec("reject requests",
+			step.NewSteps(step.New(
+				step.Exec(envtest.IgniteApp,
+					"network",
+					"--local",
+					"request",
+					"reject",
+					"1",
+					"1-2",
+					"--from",
+					spnCoordinator,
+					"--keyring-backend", "test",
+				),
+				step.Workdir(path),
+			)),
+			append(defaultOptions, envtest.ExecCtx(ctx))...,
+		))
+	})
+
+	t.Run("approve requests", func(t *testing.T) {
+		env.Must(env.Exec("approve requests",
+			step.NewSteps(step.New(
+				step.Exec(envtest.IgniteApp,
+					"network",
+					"--local",
+					"request",
+					"approve",
+					"1",
+					"3-8",
+					"--from",
+					spnCoordinator,
+					"--keyring-backend", "test",
+				),
+				step.Workdir(path),
+			)),
+			append(defaultOptions, envtest.ExecCtx(ctx))...,
+		))
+	})
 }
 
 func Hosts(ctx context.Context, env envtest.Env) chainconfig.Host {

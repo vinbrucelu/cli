@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	defaultPort     = "26656"
 	flagGentx       = "gentx"
 	flagAmount      = "amount"
 	flagDefaultPeer = "default-peer"
@@ -74,6 +75,7 @@ func networkChainJoinHandler(cmd *cobra.Command, args []string) error {
 			publicAddr, err = askPublicAddress(cmd.Context(), nb.Spinner)
 		} else {
 			publicAddr, err = ipify.GetIp()
+			publicAddr = fmt.Sprintf("%s:%s", publicAddr, defaultPort)
 		}
 		if err != nil {
 			return err
@@ -148,7 +150,7 @@ func askPublicAddress(ctx context.Context, s *clispinner.Spinner) (publicAddress
 	// just in case if GetIp fails user should enter his address manually
 	ip, err := ipify.GetIp()
 	if err == nil {
-		options = append(options, cliquiz.DefaultAnswer(fmt.Sprintf("%s:26656", ip)))
+		options = append(options, cliquiz.DefaultAnswer(fmt.Sprintf("%s:%s", ip, defaultPort)))
 	}
 
 	questions := []cliquiz.Question{cliquiz.NewQuestion(
