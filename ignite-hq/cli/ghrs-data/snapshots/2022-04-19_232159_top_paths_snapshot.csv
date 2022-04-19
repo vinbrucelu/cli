@@ -1,0 +1,11 @@
+url_path,views_total,views_unique
+/ignite-hq/cli,2987,859
+/ignite-hq/cli/pulls,779,57
+/ignite-hq/cli/issues,561,98
+/tendermint/starport,379,191
+/ignite-hq/cli/releases,185,74
+/ignite-hq/cli/search,156,37
+/tendermint/starport/issues,127,21
+/ignite-hq/cli/pull/2143,120,30
+/ignite-hq/cli/commits/develop,100,15
+/ignite-hq/cli/tree/develop/docs,99,62
