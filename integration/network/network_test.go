@@ -142,7 +142,7 @@ func TestGenerateAnAppWithStargateWithListAndVerify(t *testing.T) {
 					"request",
 					"approve",
 					"1",
-					"3-8",
+					"3-6",
 					"--from",
 					spnCoordinator,
 					"--keyring-backend", "test",
