@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	flagGentx  = "gentx"
-	flagAmount = "amount"
+	flagGentx       = "gentx"
+	flagAmount      = "amount"
+	flagDefaultPeer = "default-peer"
 )
 
 // NewNetworkChainJoin creates a new chain join command to join
@@ -34,6 +35,7 @@ func NewNetworkChainJoin() *cobra.Command {
 	}
 	c.Flags().String(flagGentx, "", "Path to a gentx json file")
 	c.Flags().String(flagAmount, "", "Amount of coins for account request")
+	c.Flags().Bool(flagDefaultPeer, false, "Use default ip address as peer")
 	c.Flags().AddFlagSet(flagNetworkFrom())
 	c.Flags().AddFlagSet(flagSetHome())
 	c.Flags().AddFlagSet(flagSetKeyringBackend())
@@ -43,8 +45,9 @@ func NewNetworkChainJoin() *cobra.Command {
 
 func networkChainJoinHandler(cmd *cobra.Command, args []string) error {
 	var (
-		gentxPath, _ = cmd.Flags().GetString(flagGentx)
-		amount, _    = cmd.Flags().GetString(flagAmount)
+		gentxPath, _   = cmd.Flags().GetString(flagGentx)
+		amount, _      = cmd.Flags().GetString(flagAmount)
+		defaultPeer, _ = cmd.Flags().GetBool(flagDefaultPeer)
 	)
 
 	nb, err := newNetworkBuilder(cmd)
@@ -66,7 +69,12 @@ func networkChainJoinHandler(cmd *cobra.Command, args []string) error {
 	// if there is no custom gentx, we need to detect the public address.
 	if gentxPath == "" {
 		// get the peer public address for the validator.
-		publicAddr, err := askPublicAddress(cmd.Context(), nb.Spinner)
+		var publicAddr string
+		if !defaultPeer {
+			publicAddr, err = askPublicAddress(cmd.Context(), nb.Spinner)
+		} else {
+			publicAddr, err = ipify.GetIp()
+		}
 		if err != nil {
 			return err
 		}

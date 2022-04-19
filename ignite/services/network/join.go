@@ -109,7 +109,6 @@ func (n Network) Join(
 			genesisPath,
 			isCustomGentx,
 			launchID,
-			accountAddress,
 			o.accountAmount,
 		); err != nil {
 			return err
@@ -125,7 +124,6 @@ func (n Network) sendAccountRequest(
 	genesisPath string,
 	isCustomGentx bool,
 	launchID uint64,
-	accountAddress string,
 	amount sdk.Coins,
 ) (err error) {
 	address := n.account.Address(networktypes.SPN)
@@ -154,7 +152,7 @@ func (n Network) sendAccountRequest(
 	msg := launchtypes.NewMsgRequestAddAccount(
 		n.account.Address(networktypes.SPN),
 		launchID,
-		accountAddress,
+		address,
 		amount,
 	)
 

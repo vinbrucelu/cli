@@ -24,6 +24,8 @@ const (
 	flagValidatorIdentity        = "validator-identity"
 	flagValidatorSelfDelegation  = "validator-self-delegation"
 	flagValidatorGasPrice        = "validator-gas-price"
+	flagDefaultValue             = "default-values"
+	flagOverwriteHome            = "overwrite-home"
 )
 
 // NewNetworkChainInit returns a new command to initialize a chain from a published chain ID
@@ -42,6 +44,8 @@ func NewNetworkChainInit() *cobra.Command {
 	c.Flags().String(flagValidatorIdentity, "", "Validator identity signature (ex. UPort or Keybase)")
 	c.Flags().String(flagValidatorSelfDelegation, "", "Validator minimum self delegation")
 	c.Flags().String(flagValidatorGasPrice, "", "Validator gas price")
+	c.Flags().Bool(flagDefaultValue, false, "Use default values")
+	c.Flags().Bool(flagOverwriteHome, false, "Overwrite the home directory if exist")
 	c.Flags().AddFlagSet(flagNetworkFrom())
 	c.Flags().AddFlagSet(flagSetHome())
 	c.Flags().AddFlagSet(flagSetKeyringBackend())
@@ -75,7 +79,8 @@ func networkChainInitHandler(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if !getYes(cmd) && exist {
+	overwriteHome, _ := cmd.Flags().GetBool(flagOverwriteHome)
+	if !getYes(cmd) && exist && !overwriteHome {
 		prompt := promptui.Prompt{
 			Label: fmt.Sprintf("The chain has already been initialized under: %s. Would you like to overwrite the home directory",
 				chainHome,
@@ -149,42 +154,52 @@ func askValidatorInfo(cmd *cobra.Command, stakeDenom string) (chain.Validator, e
 		identity, _        = cmd.Flags().GetString(flagValidatorIdentity)
 		selfDelegation, _  = cmd.Flags().GetString(flagValidatorSelfDelegation)
 		gasPrice, _        = cmd.Flags().GetString(flagValidatorGasPrice)
+		defaultValues, _   = cmd.Flags().GetBool(flagDefaultValue)
 	)
 	if gasPrice == "" {
 		gasPrice = "0" + stakeDenom
 	}
 	v := chain.Validator{
-		Name:              account,
-		Website:           website,
-		Details:           details,
-		Moniker:           moniker,
-		Identity:          identity,
-		SecurityContact:   securityContact,
-		MinSelfDelegation: selfDelegation,
-		GasPrices:         gasPrice,
+		Name:                    account,
+		Website:                 website,
+		Details:                 details,
+		Moniker:                 moniker,
+		Identity:                identity,
+		SecurityContact:         securityContact,
+		MinSelfDelegation:       selfDelegation,
+		GasPrices:               gasPrice,
+		StakingAmount:           "95000000stake",
+		CommissionRate:          "0.10",
+		CommissionMaxRate:       "0.20",
+		CommissionMaxChangeRate: "0.01",
 	}
 
-	questions := append([]cliquiz.Question{},
-		cliquiz.NewQuestion("Staking amount",
-			&v.StakingAmount,
-			cliquiz.DefaultAnswer("95000000stake"),
-			cliquiz.Required(),
-		),
-		cliquiz.NewQuestion("Commission rate",
-			&v.CommissionRate,
-			cliquiz.DefaultAnswer("0.10"),
-			cliquiz.Required(),
-		),
-		cliquiz.NewQuestion("Commission max rate",
-			&v.CommissionMaxRate,
-			cliquiz.DefaultAnswer("0.20"),
-			cliquiz.Required(),
-		),
-		cliquiz.NewQuestion("Commission max change rate",
-			&v.CommissionMaxChangeRate,
-			cliquiz.DefaultAnswer("0.01"),
-			cliquiz.Required(),
-		),
-	)
-	return v, cliquiz.Ask(questions...)
+	if !defaultValues {
+		questions := append([]cliquiz.Question{},
+			cliquiz.NewQuestion("Staking amount",
+				&v.StakingAmount,
+				cliquiz.DefaultAnswer(v.StakingAmount),
+				cliquiz.Required(),
+			),
+			cliquiz.NewQuestion("Commission rate",
+				&v.CommissionRate,
+				cliquiz.DefaultAnswer(v.CommissionRate),
+				cliquiz.Required(),
+			),
+			cliquiz.NewQuestion("Commission max rate",
+				&v.CommissionMaxRate,
+				cliquiz.DefaultAnswer(v.CommissionMaxRate),
+				cliquiz.Required(),
+			),
+			cliquiz.NewQuestion("Commission max change rate",
+				&v.CommissionMaxChangeRate,
+				cliquiz.DefaultAnswer(v.CommissionMaxChangeRate),
+				cliquiz.Required(),
+			),
+		)
+		if err := cliquiz.Ask(questions...); err != nil {
+			return v, err
+		}
+	}
+	return v, nil
 }

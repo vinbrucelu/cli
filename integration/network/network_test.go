@@ -4,13 +4,18 @@
 package network_test
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ignite-hq/cli/ignite/chainconfig"
-	"github.com/pkg/errors"
+	"os"
+	"sync"
 	"testing"
+
+	"github.com/pkg/errors"
+
+	"github.com/ignite-hq/cli/ignite/chainconfig"
 
 	"github.com/ignite-hq/cli/ignite/pkg/cmdrunner/step"
 	envtest "github.com/ignite-hq/cli/integration"
@@ -18,59 +23,96 @@ import (
 
 var (
 	chainSource    = "https://github.com/Pantani/mars"
+	appName        = "marsd"
 	spnCoordinator = "alice"
 	spnValidator1  = "bob"
 	spnValidator2  = "carol"
 	spnValidator3  = "dave"
+	defaultOptions = []envtest.ExecOption{
+		envtest.ExecStdout(bufio.NewWriter(os.Stdout)),
+		envtest.ExecStderr(bufio.NewWriter(os.Stderr)),
+	}
 )
 
 func TestGenerateAnAppWithStargateWithListAndVerify(t *testing.T) {
 	var (
-		env         = envtest.New(t)
-		path        = env.TmpDir()
+		env = envtest.New(t)
+		//path        = env.TmpDir()
 		ctx, cancel = context.WithTimeout(env.Ctx(), envtest.ServeTimeout)
 	)
 	defer cancel()
 
-	env.Must(env.Exec("publish a chain",
-		step.NewSteps(step.New(
-			step.Exec(envtest.IgniteApp,
-				"network",
-				"--local",
-				"chain",
-				"publish",
-				chainSource,
-				"--from",
-				spnCoordinator,
-				"--keyring-backend", "test",
-			),
-			step.Workdir(path),
-		)),
-		envtest.ExecCtx(ctx),
-	))
+	// check the Ignite blockchain and chains are served
+	//env.Must(env.Exec("publish a chain",
+	//	step.NewSteps(step.New(
+	//		step.Exec(envtest.IgniteApp,
+	//			appName,
+	//			"config",
+	//			"output", "json",
+	//		),
+	//		step.PreExec(func() error {
+	//			return env.IsAppServed(ctx, host)
+	//		}),
+	//	))),
+	//)
 
-	env.Must(env.Exec("init a chain",
-		step.NewSteps(step.New(
-			step.Exec(envtest.IgniteApp,
-				"network",
-				"--local",
-				"init",
-				"1",
-				"--from",
-				spnCoordinator,
-				"--keyring-backend", "test",
-			),
-			step.Workdir(path),
-		)),
-		envtest.ExecCtx(ctx),
-	))
+	//t.Run("publish", func(t *testing.T) {
+	//	env.Must(env.Exec("publish a chain",
+	//		step.NewSteps(step.New(
+	//			step.Exec(envtest.IgniteApp,
+	//				"network",
+	//				"--local",
+	//				"chain",
+	//				"publish",
+	//				chainSource,
+	//				"--from",
+	//				spnCoordinator,
+	//				"--keyring-backend", "test",
+	//			),
+	//			step.Workdir(path),
+	//		)),
+	//		append(defaultOptions, envtest.ExecCtx(ctx))...,
+	//	))
+	//})
+	//t.Run("init", func(t *testing.T) {
+	//	env.Must(env.Exec("init a chain",
+	//		step.NewSteps(step.New(
+	//			step.Exec(envtest.IgniteApp,
+	//				"network",
+	//				"--local",
+	//				"chain",
+	//				"init",
+	//				"1",
+	//				"--default-values",
+	//				"--overwrite-home",
+	//				"--from",
+	//				spnCoordinator,
+	//				"--keyring-backend", "test",
+	//			),
+	//			step.Workdir(path),
+	//		)),
+	//		append(defaultOptions, envtest.ExecCtx(ctx))...,
+	//	))
+	//})
 
+	var wg sync.WaitGroup
 	for i, validator := range []string{spnValidator1, spnValidator2, spnValidator3} {
-		env.Must(env.Exec(
-			fmt.Sprintf("join as validator %d (%s)", i, validator),
-			validatorStep(validator),
-		))
+		t.Run(fmt.Sprintf("join with %s", validator), func(t *testing.T) {
+			wg.Add(1)
+			go func() {
+				validator := validator
+				i := i
+				defer wg.Done()
+				env.Must(env.Exec(
+					fmt.Sprintf("join as validator %d (%s)", i, validator),
+					validatorStep(validator),
+					append(defaultOptions, envtest.ExecCtx(ctx))...,
+				))
+			}()
+		})
 	}
+	wg.Wait()
+
 }
 
 func Hosts(ctx context.Context, env envtest.Env) chainconfig.Host {
@@ -85,7 +127,7 @@ func Hosts(ctx context.Context, env envtest.Env) chainconfig.Host {
 	// Tendermint node: http://0.0.0.0:26657
 	// Token faucet: http://0.0.0.0:4500
 }
-func acc(ctx context.Context, env envtest.Env) step.Steps {
+func createAccount(ctx context.Context, env envtest.Env) step.Steps {
 	var output = &bytes.Buffer{}
 	return step.NewSteps(
 		step.New(
@@ -137,10 +179,19 @@ func acc(ctx context.Context, env envtest.Env) step.Steps {
 func validatorStep(from string) step.Steps {
 	return step.NewSteps(step.New(
 		step.Exec(envtest.IgniteApp,
+			"account",
+			"create",
+			from,
+		),
+		step.Exec(envtest.IgniteApp,
 			"network",
 			"--local",
-			"init",
+			"chain",
+			"join",
 			"1",
+			"--amount",
+			"95000001stake",
+			"--default-peer",
 			"--from",
 			from,
 			"--keyring-backend", "test",
