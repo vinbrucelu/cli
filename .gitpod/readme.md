@@ -2,7 +2,7 @@
 
 Ignite CLI is an easy-to-use CLI tool for creating sovereign blockchains. Blockchains created with Ignite CLI use Cosmos SDK, the world's most widely used blockchain application framework.
 
-In this browser-based development environment, the terminal window is in the lower part of the window. The `ignite` binary is pre-installed and ready to use on the command line.
+In this browser-based development environment, the terminal window is in the lower part of the window. The `ignite` binary is preinstalled and ready to use on the command line.
 
 ## Quick start
 
@@ -20,7 +20,7 @@ where:
 
 * github.com represents a local development repository
 * username is a placeholder, be sure to replace username with your name
-* blog is the name of your chain
+* mars is the name of your chain
 
 ## Next steps
 
