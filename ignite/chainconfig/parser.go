@@ -93,10 +93,17 @@ func Parse(r io.Reader) (common.Config, error) {
 		return nil, err
 	}
 
+	fmt.Println("after merging")
+	fmt.Println(conf)
+
 	conf, err = conversion.ConvertLatest(conf)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("after upgrade")
+	fmt.Println(conf)
+
 	return conf, validate(conf)
 }
 
