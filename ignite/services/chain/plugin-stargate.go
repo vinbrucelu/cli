@@ -9,7 +9,7 @@ import (
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pelletier/go-toml"
 
-	"github.com/ignite-hq/cli/ignite/chainconfig"
+	v1 "github.com/ignite-hq/cli/ignite/chainconfig/v1"
 	"github.com/ignite-hq/cli/ignite/pkg/chaincmd"
 	chaincmdrunner "github.com/ignite-hq/cli/ignite/pkg/chaincmd/runner"
 	"github.com/ignite-hq/cli/ignite/pkg/cosmosver"
@@ -48,7 +48,7 @@ func (p *stargatePlugin) Gentx(ctx context.Context, runner chaincmdrunner.Runner
 	)
 }
 
-func (p *stargatePlugin) Configure(homePath string, conf chainconfig.Config) error {
+func (p *stargatePlugin) Configure(homePath string, conf *v1.Config) error {
 	if err := p.appTOML(homePath, conf); err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (p *stargatePlugin) Configure(homePath string, conf chainconfig.Config) err
 	return p.configTOML(homePath, conf)
 }
 
-func (p *stargatePlugin) appTOML(homePath string, conf chainconfig.Config) error {
+func (p *stargatePlugin) appTOML(homePath string, conf *v1.Config) error {
 	// TODO find a better way in order to not delete comments in the toml.yml
 	path := filepath.Join(homePath, "config/app.toml")
 	config, err := toml.LoadFile(path)
@@ -66,19 +66,20 @@ func (p *stargatePlugin) appTOML(homePath string, conf chainconfig.Config) error
 		return err
 	}
 
-	apiAddr, err := xurl.TCP(conf.Host.API)
+	validator := conf.Validators[0]
+	apiAddr, err := xurl.TCP(validator.GetAPI())
 	if err != nil {
-		return fmt.Errorf("invalid api address format %s: %w", conf.Host.API, err)
+		return fmt.Errorf("invalid api address format %s: %w", validator.GetAPI(), err)
 	}
 
 	config.Set("api.enable", true)
 	config.Set("api.enabled-unsafe-cors", true)
 	config.Set("rpc.cors_allowed_origins", []string{"*"})
 	config.Set("api.address", apiAddr)
-	config.Set("grpc.address", conf.Host.GRPC)
-	config.Set("grpc-web.address", conf.Host.GRPCWeb)
+	config.Set("grpc.address", validator.GetGRPC())
+	config.Set("grpc-web.address", validator.GetGRPCWeb())
 
-	staked, err := sdktypes.ParseCoinNormalized(conf.Validator.Staked)
+	staked, err := sdktypes.ParseCoinNormalized(conf.ListValidators()[0].Bonded)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func (p *stargatePlugin) appTOML(homePath string, conf chainconfig.Config) error
 	return err
 }
 
-func (p *stargatePlugin) configTOML(homePath string, conf chainconfig.Config) error {
+func (p *stargatePlugin) configTOML(homePath string, conf *v1.Config) error {
 	// TODO find a better way in order to not delete comments in the toml.yml
 	path := filepath.Join(homePath, "config/config.toml")
 	config, err := toml.LoadFile(path)
@@ -103,14 +104,15 @@ func (p *stargatePlugin) configTOML(homePath string, conf chainconfig.Config) er
 		return err
 	}
 
-	rpcAddr, err := xurl.TCP(conf.Host.RPC)
+	validator := conf.Validators[0]
+	rpcAddr, err := xurl.TCP(validator.GetRPC())
 	if err != nil {
-		return fmt.Errorf("invalid rpc address format %s: %w", conf.Host.RPC, err)
+		return fmt.Errorf("invalid rpc address format %s: %w", validator.GetRPC(), err)
 	}
 
-	p2pAddr, err := xurl.TCP(conf.Host.P2P)
+	p2pAddr, err := xurl.TCP(validator.GetP2P())
 	if err != nil {
-		return fmt.Errorf("invalid p2p address format %s: %w", conf.Host.P2P, err)
+		return fmt.Errorf("invalid p2p address format %s: %w", validator.GetP2P(), err)
 	}
 
 	config.Set("mode", "validator")
@@ -119,7 +121,7 @@ func (p *stargatePlugin) configTOML(homePath string, conf chainconfig.Config) er
 	config.Set("consensus.timeout_propose", "1s")
 	config.Set("rpc.laddr", rpcAddr)
 	config.Set("p2p.laddr", p2pAddr)
-	config.Set("rpc.pprof_laddr", conf.Host.Prof)
+	config.Set("rpc.pprof_laddr", validator.GetProf())
 
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
@@ -151,12 +153,13 @@ func (p *stargatePlugin) clientTOML(homePath string) error {
 	return err
 }
 
-func (p *stargatePlugin) Start(ctx context.Context, runner chaincmdrunner.Runner, conf chainconfig.Config) error {
+func (p *stargatePlugin) Start(ctx context.Context, runner chaincmdrunner.Runner, conf *v1.Config) error {
+	validator := conf.Validators[0]
 	err := runner.Start(ctx,
 		"--pruning",
 		"nothing",
 		"--grpc.address",
-		conf.Host.GRPC,
+		validator.GetGRPC(),
 	)
 	return &CannotStartAppError{p.app.Name, err}
 }
