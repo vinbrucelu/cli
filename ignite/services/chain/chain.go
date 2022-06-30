@@ -6,11 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
+	v1 "github.com/ignite-hq/cli/ignite/chainconfig/v1"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/gookit/color"
 	"github.com/tendermint/spn/pkg/chainid"
 
 	"github.com/ignite-hq/cli/ignite/chainconfig"
+	"github.com/ignite-hq/cli/ignite/chainconfig/common"
 	sperrors "github.com/ignite-hq/cli/ignite/errors"
 	"github.com/ignite-hq/cli/ignite/pkg/chaincmd"
 	chaincmdrunner "github.com/ignite-hq/cli/ignite/pkg/chaincmd/runner"
@@ -200,7 +203,7 @@ func (c *Chain) RPCPublicAddress() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		rpcAddress = conf.Host.RPC
+		rpcAddress = conf.GetHost().RPC
 	}
 	return rpcAddress, nil
 }
@@ -219,10 +222,11 @@ func (c *Chain) ConfigPath() string {
 }
 
 // Config returns the config of the chain
-func (c *Chain) Config() (chainconfig.Config, error) {
+func (c *Chain) Config() (common.Config, error) {
 	configPath := c.ConfigPath()
 	if configPath == "" {
-		return chainconfig.DefaultConf, nil
+		conf := &v1.Config{}
+		return conf.Default(), nil
 	}
 	return chainconfig.ParseFile(configPath)
 }
@@ -239,7 +243,7 @@ func (c *Chain) ID() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	genid, ok := chainConfig.Genesis["chain_id"]
+	genid, ok := chainConfig.GetGenesis()["chain_id"]
 	if ok {
 		return genid.(string), nil
 	}
@@ -269,8 +273,8 @@ func (c *Chain) Binary() (string, error) {
 		return "", err
 	}
 
-	if conf.Build.Binary != "" {
-		return conf.Build.Binary, nil
+	if conf.GetBuild().Binary != "" {
+		return conf.GetBuild().Binary, nil
 	}
 
 	return c.app.D(), nil
@@ -308,8 +312,8 @@ func (c *Chain) DefaultHome() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if config.Init.Home != "" {
-		return config.Init.Home, nil
+	if config.GetInit().Home != "" {
+		return config.GetInit().Home, nil
 	}
 
 	return c.plugin.Home(), nil
@@ -382,13 +386,13 @@ func (c *Chain) KeyringBackend() (chaincmd.KeyringBackend, error) {
 	}
 
 	// 2nd.
-	if config.Init.KeyringBackend != "" {
-		return chaincmd.KeyringBackendFromString(config.Init.KeyringBackend)
+	if config.GetInit().KeyringBackend != "" {
+		return chaincmd.KeyringBackendFromString(config.GetInit().KeyringBackend)
 	}
 
 	// 3rd.
-	if config.Init.Client != nil {
-		if backend, ok := config.Init.Client["keyring-backend"]; ok {
+	if config.GetInit().Client != nil {
+		if backend, ok := config.GetInit().Client["keyring-backend"]; ok {
 			if backendStr, ok := backend.(string); ok {
 				return chaincmd.KeyringBackendFromString(backendStr)
 			}
@@ -442,7 +446,7 @@ func (c *Chain) Commands(ctx context.Context) (chaincmdrunner.Runner, error) {
 		return chaincmdrunner.Runner{}, err
 	}
 
-	nodeAddr, err := xurl.TCP(config.Host.RPC)
+	nodeAddr, err := xurl.TCP(config.GetHost().RPC)
 	if err != nil {
 		return chaincmdrunner.Runner{}, err
 	}
