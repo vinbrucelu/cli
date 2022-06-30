@@ -14,16 +14,17 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/ignite-hq/cli/ignite/chainconfig"
-	"github.com/ignite-hq/cli/ignite/pkg/cache"
-	chaincmdrunner "github.com/ignite-hq/cli/ignite/pkg/chaincmd/runner"
-	"github.com/ignite-hq/cli/ignite/pkg/cosmosfaucet"
-	"github.com/ignite-hq/cli/ignite/pkg/dirchange"
-	"github.com/ignite-hq/cli/ignite/pkg/localfs"
-	"github.com/ignite-hq/cli/ignite/pkg/xexec"
-	"github.com/ignite-hq/cli/ignite/pkg/xfilepath"
-	"github.com/ignite-hq/cli/ignite/pkg/xhttp"
-	"github.com/ignite-hq/cli/ignite/pkg/xurl"
+	"github.com/ignite/cli/ignite/chainconfig"
+	v1 "github.com/ignite/cli/ignite/chainconfig/v1"
+	"github.com/ignite/cli/ignite/pkg/cache"
+	chaincmdrunner "github.com/ignite/cli/ignite/pkg/chaincmd/runner"
+	"github.com/ignite/cli/ignite/pkg/cosmosfaucet"
+	"github.com/ignite/cli/ignite/pkg/dirchange"
+	"github.com/ignite/cli/ignite/pkg/localfs"
+	"github.com/ignite/cli/ignite/pkg/xexec"
+	"github.com/ignite/cli/ignite/pkg/xfilepath"
+	"github.com/ignite/cli/ignite/pkg/xhttp"
+	"github.com/ignite/cli/ignite/pkg/xurl"
 )
 
 const (
@@ -168,7 +169,7 @@ func (c *Chain) Serve(ctx context.Context, cacheStorage cache.Storage, options .
 
 					var validationErr *chainconfig.ValidationError
 					if errors.As(err, &validationErr) {
-						fmt.Fprintln(c.stdLog().out, "see: https://github.com/ignite-hq/cli#configure")
+						fmt.Fprintln(c.stdLog().out, "see: https://github.com/ignite/cli#configure")
 					}
 
 					fmt.Fprintf(c.stdLog().out, "%s\n", infoColor("Waiting for a fix before retrying..."))
@@ -378,7 +379,7 @@ func (c *Chain) serve(ctx context.Context, cacheStorage cache.Storage, forceRese
 	return c.start(ctx, conf)
 }
 
-func (c *Chain) start(ctx context.Context, config chainconfig.Config) error {
+func (c *Chain) start(ctx context.Context, config *v1.Config) error {
 	commands, err := c.Commands(ctx)
 	if err != nil {
 		return err
@@ -412,10 +413,14 @@ func (c *Chain) start(ctx context.Context, config chainconfig.Config) error {
 	// set the app as being served
 	c.served = true
 
+	// Get the first validator
+	validator := config.Validators[0]
+
 	// note: address format errors are handled by the
 	// error group, so they can be safely ignored here
-	rpcAddr, _ := xurl.HTTP(config.Host.RPC)
-	apiAddr, _ := xurl.HTTP(config.Host.API)
+
+	rpcAddr, _ := xurl.HTTP(validator.GetRPC())
+	apiAddr, _ := xurl.HTTP(validator.GetAPI())
 
 	// print the server addresses.
 	fmt.Fprintf(c.stdLog().out, "🌍 Tendermint node: %s\n", rpcAddr)

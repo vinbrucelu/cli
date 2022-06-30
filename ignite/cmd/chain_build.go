@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ignite-hq/cli/ignite/pkg/chaincmd"
-	"github.com/ignite-hq/cli/ignite/pkg/cliui/colors"
-	"github.com/ignite-hq/cli/ignite/services/chain"
+	"github.com/ignite/cli/ignite/pkg/chaincmd"
+	"github.com/ignite/cli/ignite/pkg/cliui/colors"
+	"github.com/ignite/cli/ignite/services/chain"
 )
 
 const (
@@ -47,6 +47,7 @@ Sample usages:
 	c.Flags().String(flagReleasePrefix, "", "tarball prefix for each release target. Available only with --release flag")
 	c.Flags().StringP(flagOutput, "o", "", "binary output path")
 	c.Flags().BoolP("verbose", "v", false, "Verbose output")
+	c.Flags().StringP(flagConfig, "c", "", "Ignite config file (default: ./config.yml)")
 
 	return c
 }

@@ -9,12 +9,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/imdario/mergo"
+
 	"github.com/stretchr/testify/require"
 
-	"github.com/ignite-hq/cli/ignite/chainconfig"
-	"github.com/ignite-hq/cli/ignite/pkg/confile"
-	"github.com/ignite-hq/cli/ignite/pkg/randstr"
-	envtest "github.com/ignite-hq/cli/integration"
+	v1 "github.com/ignite/cli/ignite/chainconfig/v1"
+	"github.com/ignite/cli/ignite/pkg/confile"
+	"github.com/ignite/cli/ignite/pkg/randstr"
+	envtest "github.com/ignite/cli/integration"
 )
 
 func TestOverwriteSDKConfigsAndChainID(t *testing.T) {
@@ -27,17 +29,23 @@ func TestOverwriteSDKConfigsAndChainID(t *testing.T) {
 		isBackendAliveErr error
 	)
 
-	var c chainconfig.Config
+	var c v1.Config
 
 	cf := confile.New(confile.DefaultYAMLEncodingCreator, filepath.Join(path, "config.yml"))
 	require.NoError(t, cf.Load(&c))
 
 	c.Genesis = map[string]interface{}{"chain_id": "cosmos"}
-	c.Init.App = map[string]interface{}{"hello": "cosmos"}
-	c.Init.Config = map[string]interface{}{"fast_sync": false}
+	defaultValidator := v1.Validator{
+		App:    map[string]interface{}{"hello": "cosmos"},
+		Config: map[string]interface{}{"fast_sync": false},
+	}
+
+	for i := range c.Validators {
+		err := mergo.Merge(&c.Validators[i], defaultValidator)
+		require.NoError(t, err)
+	}
 
 	require.NoError(t, cf.Save(c))
-
 	go func() {
 		defer cancel()
 		isBackendAliveErr = env.IsAppServed(ctx, servers)

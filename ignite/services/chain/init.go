@@ -9,9 +9,9 @@ import (
 
 	"github.com/imdario/mergo"
 
-	"github.com/ignite-hq/cli/ignite/chainconfig"
-	chaincmdrunner "github.com/ignite-hq/cli/ignite/pkg/chaincmd/runner"
-	"github.com/ignite-hq/cli/ignite/pkg/confile"
+	v1 "github.com/ignite/cli/ignite/chainconfig/v1"
+	chaincmdrunner "github.com/ignite/cli/ignite/pkg/chaincmd/runner"
+	"github.com/ignite/cli/ignite/pkg/confile"
 )
 
 const (
@@ -96,15 +96,32 @@ func (c *Chain) InitChain(ctx context.Context) error {
 		return err
 	}
 
+	validator := conf.Validators[0]
+	config := make(map[string]interface{})
+	for key, value := range validator.Config {
+		config[key] = value
+	}
+	delete(config, "rpc")
+	delete(config, "p2p")
+	delete(config, "pprof_laddr")
+
+	app := make(map[string]interface{})
+	for key, value := range validator.App {
+		app[key] = value
+	}
+	delete(app, "grpc")
+	delete(app, "grpc-web")
+	delete(app, "api")
+
 	appconfigs := []struct {
 		ec      confile.EncodingCreator
 		path    string
 		changes map[string]interface{}
 	}{
 		{confile.DefaultJSONEncodingCreator, genesisPath, conf.Genesis},
-		{confile.DefaultTOMLEncodingCreator, appTOMLPath, conf.Init.App},
-		{confile.DefaultTOMLEncodingCreator, clientTOMLPath, conf.Init.Client},
-		{confile.DefaultTOMLEncodingCreator, configTOMLPath, conf.Init.Config},
+		{confile.DefaultTOMLEncodingCreator, appTOMLPath, app},
+		{confile.DefaultTOMLEncodingCreator, clientTOMLPath, validator.Client},
+		{confile.DefaultTOMLEncodingCreator, configTOMLPath, config},
 	}
 
 	for _, ac := range appconfigs {
@@ -125,14 +142,14 @@ func (c *Chain) InitChain(ctx context.Context) error {
 }
 
 // InitAccounts initializes the chain accounts and creates validator gentxs
-func (c *Chain) InitAccounts(ctx context.Context, conf chainconfig.Config) error {
+func (c *Chain) InitAccounts(ctx context.Context, conf *v1.Config) error {
 	commands, err := c.Commands(ctx)
 	if err != nil {
 		return err
 	}
 
 	// add accounts from config into genesis
-	for _, account := range conf.Accounts {
+	for _, account := range conf.ListAccounts() {
 		var generatedAccount chaincmdrunner.Account
 		accountAddress := account.Address
 
@@ -168,10 +185,8 @@ func (c *Chain) InitAccounts(ctx context.Context, conf chainconfig.Config) error
 		}
 	}
 
-	_, err = c.IssueGentx(ctx, Validator{
-		Name:          conf.Validator.Name,
-		StakingAmount: conf.Validator.Staked,
-	})
+	_, err = c.IssueGentx(ctx, createValidatorFromConfig(conf))
+
 	return err
 }
 
@@ -234,4 +249,48 @@ type Account struct {
 	Mnemonic string `json:"mnemonic"`
 	CoinType string
 	Coins    string
+}
+
+func createValidatorFromConfig(conf *v1.Config) (validator Validator) {
+	// Currently, we support the config file with one valid validator.
+	validatorFromConfig := conf.Validators[0]
+	validator.Name = validatorFromConfig.Name
+	validator.StakingAmount = validatorFromConfig.Bonded
+
+	if validatorFromConfig.Gentx != nil {
+		if validatorFromConfig.Gentx.Amount != "" {
+			validator.StakingAmount = validatorFromConfig.Gentx.Amount
+		}
+		if validatorFromConfig.Gentx.Moniker != "" {
+			validator.Moniker = validatorFromConfig.Gentx.Moniker
+		}
+		if validatorFromConfig.Gentx.CommissionRate != "" {
+			validator.CommissionRate = validatorFromConfig.Gentx.CommissionRate
+		}
+		if validatorFromConfig.Gentx.CommissionMaxRate != "" {
+			validator.CommissionMaxRate = validatorFromConfig.Gentx.CommissionMaxRate
+		}
+		if validatorFromConfig.Gentx.CommissionMaxChangeRate != "" {
+			validator.CommissionMaxChangeRate = validatorFromConfig.Gentx.CommissionMaxChangeRate
+		}
+		if validatorFromConfig.Gentx.GasPrices != "" {
+			validator.GasPrices = validatorFromConfig.Gentx.GasPrices
+		}
+		if validatorFromConfig.Gentx.Details != "" {
+			validator.Details = validatorFromConfig.Gentx.Details
+		}
+		if validatorFromConfig.Gentx.Identity != "" {
+			validator.Identity = validatorFromConfig.Gentx.Identity
+		}
+		if validatorFromConfig.Gentx.Website != "" {
+			validator.Website = validatorFromConfig.Gentx.Website
+		}
+		if validatorFromConfig.Gentx.SecurityContact != "" {
+			validator.SecurityContact = validatorFromConfig.Gentx.SecurityContact
+		}
+		if validatorFromConfig.Gentx.MinSelfDelegation != "" {
+			validator.MinSelfDelegation = validatorFromConfig.Gentx.MinSelfDelegation
+		}
+	}
+	return validator
 }

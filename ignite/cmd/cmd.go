@@ -13,17 +13,17 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
-	"github.com/ignite-hq/cli/ignite/chainconfig"
-	"github.com/ignite-hq/cli/ignite/pkg/cache"
-	"github.com/ignite-hq/cli/ignite/pkg/cliui"
-	"github.com/ignite-hq/cli/ignite/pkg/cosmosaccount"
-	"github.com/ignite-hq/cli/ignite/pkg/cosmosver"
-	"github.com/ignite-hq/cli/ignite/pkg/gitpod"
-	"github.com/ignite-hq/cli/ignite/pkg/goenv"
-	"github.com/ignite-hq/cli/ignite/pkg/xgenny"
-	"github.com/ignite-hq/cli/ignite/services/chain"
-	"github.com/ignite-hq/cli/ignite/services/scaffolder"
-	"github.com/ignite-hq/cli/ignite/version"
+	"github.com/ignite/cli/ignite/chainconfig"
+	"github.com/ignite/cli/ignite/pkg/cache"
+	"github.com/ignite/cli/ignite/pkg/cliui"
+	"github.com/ignite/cli/ignite/pkg/cosmosaccount"
+	"github.com/ignite/cli/ignite/pkg/cosmosver"
+	"github.com/ignite/cli/ignite/pkg/gitpod"
+	"github.com/ignite/cli/ignite/pkg/goenv"
+	"github.com/ignite/cli/ignite/pkg/xgenny"
+	"github.com/ignite/cli/ignite/services/chain"
+	"github.com/ignite/cli/ignite/services/scaffolder"
+	"github.com/ignite/cli/ignite/version"
 )
 
 const (
@@ -109,6 +109,17 @@ func flagNetworkFrom() *flag.FlagSet {
 
 func getHome(cmd *cobra.Command) (home string) {
 	home, _ = cmd.Flags().GetString(flagHome)
+	return
+}
+
+func flagSetConfig() *flag.FlagSet {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.StringP(flagConfig, "c", "", "Ignite config file (default: ./config.yml)")
+	return fs
+}
+
+func getConfig(cmd *cobra.Command) (config string) {
+	config, _ = cmd.Flags().GetString(flagConfig)
 	return
 }
 
