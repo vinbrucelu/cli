@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ignite-hq/cli/ignite/chainconfig/common"
+	v0 "github.com/ignite-hq/cli/ignite/chainconfig/v0"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +24,7 @@ validator:
 	conf, err := Parse(strings.NewReader(confyml))
 
 	require.NoError(t, err)
-	require.Equal(t, []Account{
+	require.Equal(t, []common.Account{
 		{
 			Name:  "me",
 			Coins: []string{"1000token", "100000000stake"},
@@ -31,11 +33,12 @@ validator:
 			Name:  "you",
 			Coins: []string{"5000token"},
 		},
-	}, conf.Accounts)
-	require.Equal(t, Validator{
-		Name:   "user1",
-		Staked: "100000000stake",
-	}, conf.Validator)
+	}, conf.ListAccounts())
+	require.Equal(t, []common.Validator{
+		&v0.Validator{
+			Name:   "user1",
+			Staked: "100000000stake",
+		}}, conf.ListValidators())
 }
 
 func TestCoinTypeParse(t *testing.T) {
@@ -56,7 +59,7 @@ validator:
 	conf, err := Parse(strings.NewReader(confyml))
 
 	require.NoError(t, err)
-	require.Equal(t, []Account{
+	require.Equal(t, []common.Account{
 		{
 			Name:     "me",
 			Coins:    []string{"1000token", "100000000stake"},
@@ -68,11 +71,12 @@ validator:
 			Coins:    []string{"5000token"},
 			CoinType: "123456",
 		},
-	}, conf.Accounts)
-	require.Equal(t, Validator{
-		Name:   "user1",
-		Staked: "100000000stake",
-	}, conf.Validator)
+	}, conf.ListAccounts())
+	require.Equal(t, []common.Validator{
+		&v0.Validator{
+			Name:   "user1",
+			Staked: "100000000stake",
+		}}, conf.ListValidators())
 }
 
 func TestParseInvalid(t *testing.T) {
@@ -138,4 +142,36 @@ faucet:
 	conf, err = Parse(strings.NewReader(confyml))
 	require.NoError(t, err)
 	require.Equal(t, ":4700", FaucetHost(conf))
+}
+
+func TestParseWithVersion(t *testing.T) {
+	tests := []struct {
+		TestName        string
+		Input           string
+		ExpectedError   error
+		ExpectedVersion int
+	}{{
+		TestName: "Parse the config yaml with the field version",
+		Input: `
+version: 0
+accounts:
+  - name: me
+    coins: ["1000token", "100000000stake"]
+  - name: you
+    coins: ["5000token"]
+validator:
+  name: user1
+  staked: "100000000stake"
+`,
+		ExpectedError:   nil,
+		ExpectedVersion: 1,
+	}}
+
+	for _, test := range tests {
+		t.Run(test.TestName, func(t *testing.T) {
+			conf, err := Parse(strings.NewReader(test.Input))
+			require.Equal(t, test.ExpectedError, err)
+			require.Equal(t, test.ExpectedVersion, conf.GetVersion())
+		})
+	}
 }
