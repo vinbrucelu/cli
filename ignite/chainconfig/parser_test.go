@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ignite-hq/cli/ignite/chainconfig/common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +23,7 @@ validator:
 	conf, err := Parse(strings.NewReader(confyml))
 
 	require.NoError(t, err)
-	require.Equal(t, []Account{
+	require.Equal(t, []common.Account{
 		{
 			Name:  "me",
 			Coins: []string{"1000token", "100000000stake"},
@@ -31,11 +32,11 @@ validator:
 			Name:  "you",
 			Coins: []string{"5000token"},
 		},
-	}, conf.Accounts)
-	require.Equal(t, Validator{
+	}, conf.ListAccounts())
+	require.Equal(t, common.Validator{
 		Name:   "user1",
 		Staked: "100000000stake",
-	}, conf.Validator)
+	}, conf.ListValidators()[0])
 }
 
 func TestCoinTypeParse(t *testing.T) {
@@ -56,7 +57,7 @@ validator:
 	conf, err := Parse(strings.NewReader(confyml))
 
 	require.NoError(t, err)
-	require.Equal(t, []Account{
+	require.Equal(t, []common.Account{
 		{
 			Name:     "me",
 			Coins:    []string{"1000token", "100000000stake"},
@@ -68,11 +69,11 @@ validator:
 			Coins:    []string{"5000token"},
 			CoinType: "123456",
 		},
-	}, conf.Accounts)
-	require.Equal(t, Validator{
+	}, conf.ListAccounts())
+	require.Equal(t, common.Validator{
 		Name:   "user1",
 		Staked: "100000000stake",
-	}, conf.Validator)
+	}, conf.ListValidators()[0])
 }
 
 func TestParseInvalid(t *testing.T) {
